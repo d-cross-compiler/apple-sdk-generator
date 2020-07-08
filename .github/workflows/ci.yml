@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: '*'
+    tags: v*
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: 0 0 * * *
+
+env:
+  MACOSX_DEPLOYMENT_TARGET: 10.9
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.nightly || false }}
+    strategy:
+      matrix:
+        os:
+          - macOS-latest
+          - ubuntu-latest
+
+        compiler:
+          - dmd-latest
+          - ldc-latest
+
+        include:
+          - os: ubuntu-latest
+            compiler: dmd-beta
+
+          - os: ubuntu-latest
+            compiler: ldc-beta
+
+          - os: ubuntu-latest
+            compiler: dmd-master
+            nightly: true
+
+          - os: ubuntu-latest
+            compiler: ldc-master
+            nightly: true
+
+    steps:
+      - name: Install Compiler
+        uses: dlang-community/setup-dlang@v1
+        with:
+          compiler: ${{ matrix.compiler }}
+
+      - name: Clone Repository
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      - name: Build
+        run: dub build --verror
+
+  create_release:
+    name: Create Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: macOS-latest
+    steps:
+      - name: Install Compiler
+        uses: dlang-community/setup-dlang@v1
+        with:
+          compiler: ldc-latest
+
+      - name: Clone Repository
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      - name: Extract Version
+        id: version
+        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/v}
+
+      - name: Build
+        run: ./tools/build_release.sh
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Apple SDK Generator ${{ steps.version.outputs.VERSION }}
+          draft: true
+          files: apple-sdk-generator*.tar.xz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,19 @@
+name "apple-sdk-generator"
+description "A tool that generates the TBD files for the Apple SDKs"
+authors "Jacob Carlborg"
+copyright "Copyright © 2020, Jacob Carlborg"
+license "BSL-1.0"
+
+dependency "dyaml" version="~>0.8.1"
+
+preGenerateCommands "mkdir -p tmp"
+preGenerateCommands "git describe --dirty --tags --always > tmp/version"
+preGenerateCommands "$DUB describe --verror --data target-name --data-list | head -n 1 > tmp/name"
+
+stringImportPaths "tmp"
+
+buildType "release" {
+  buildOptions "optimize" "inline"
+  dflags "-flto=full"
+  lflags "-dead_strip"
+}

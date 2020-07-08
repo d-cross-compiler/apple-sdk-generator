@@ -1,0 +1,16 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/tmp
+/apple-sdk-generator
+apple-sdk-generator.so
+apple-sdk-generator.dylib
+apple-sdk-generator.dll
+apple-sdk-generator.a
+apple-sdk-generator.lib
+apple-sdk-generator-test-*
+*.exe
+*.o
+*.obj
+*.lst
